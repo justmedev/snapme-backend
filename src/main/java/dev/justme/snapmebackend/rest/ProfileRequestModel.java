@@ -1,12 +1,23 @@
 package dev.justme.snapmebackend.rest;
 
 import javax.validation.constraints.NotNull;
+import java.util.Date;
 
+/**
+ *
+ * required arguments are:
+ * <pre>
+ * @String name
+ * @Date birthday
+ * @String[] pictureUrls
+ * @String bio
+ * @String[] interests
+ * </pre>
+ */
 public class ProfileRequestModel {
     @NotNull
     private String name;
-    @NotNull
-    private int birthdayTimestamp;
+    private @NotNull Date birthday;
     @NotNull
     private String[] pictureUrls;
     @NotNull
@@ -31,8 +42,8 @@ public class ProfileRequestModel {
         return name;
     }
 
-    public int getBirthdayTimestamp() {
-        return birthdayTimestamp;
+    public @NotNull Date getBirthday() {
+        return birthday;
     }
 
     public String[] getPictureUrls() {
@@ -51,7 +62,7 @@ public class ProfileRequestModel {
         this.name = name;
     }
 
-    public void setBirthdayTimestamp(int birthdayTimestamp) {
-        this.birthdayTimestamp = birthdayTimestamp;
+    public void setBirthday(@NotNull Date birthday) {
+        this.birthday = birthday;
     }
 }

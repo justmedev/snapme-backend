@@ -1,27 +1,23 @@
 package dev.justme.snapmebackend.rest;
 
 import java.sql.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.*;
+import java.util.Date;
 
 import dev.justme.snapmebackend.DataManager;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.validation.Valid;
-import javax.xml.crypto.Data;
+import javax.validation.constraints.NotNull;
 
 @RestController
 public class ProfileController {
-    private static final String template = "Hello, %s!";
-    private final AtomicLong counter = new AtomicLong();
-
     @PutMapping("/profile")
     public Profile putProfile(@RequestBody @Valid ProfileRequestModel profileRequestModel) {
         String uuid = UUID.randomUUID().toString();
-        Profile profile = new Profile(uuid, profileRequestModel.getName(), profileRequestModel.getBirthdayTimestamp(), new String[]{}, 0, profileRequestModel.getBio(), profileRequestModel.getInterests());
+        Profile profile = new Profile(uuid, profileRequestModel.getName(), profileRequestModel.getBirthday(), new String[]{}, 0, profileRequestModel.getBio(), profileRequestModel.getInterests());
 
         int affectedRows = profile.insertIntoDatabase();
         if (affectedRows != 1) System.out.printf("Something went wrong... %s rows affected%n", affectedRows);
@@ -34,21 +30,27 @@ public class ProfileController {
     public Profile getProfile(@RequestParam(value = "uuid") String uuid) {
         try {
             Connection conn = Objects.requireNonNull(DataManager.getInstance().jdbcTemplate.getDataSource()).getConnection();
-            PreparedStatement statement = conn.prepareStatement("SELECT * FROM profiles WHERE uuid == ?;");
+
+            PreparedStatement statement = conn.prepareStatement("SELECT * FROM profiles WHERE uuid = ?;");
             statement.setString(1, uuid);
+
             ResultSet queryResult = statement.executeQuery();
+            if (queryResult.next()) {
+                String name = queryResult.getString("name");
+                String bio = queryResult.getString("bio");
+                @NotNull Date birthdayTimestamp = queryResult.getDate("birthday");
+                int friends = queryResult.getInt("friends");
+                String[] interests = (String[]) queryResult.getArray("interests").getArray();
+                String[] pictureUrls = (String[]) queryResult.getArray("pictureurls").getArray();
 
-            String name = queryResult.getString("name");
-            int birthdayTimestamp = queryResult.getInt("birthday_timestamp");
-            Array pictureUrls = queryResult.getArray("pictureurls");
-            int friends = queryResult.getInt("friends");
-            String bio = queryResult.getString("bio");
-            Array interests = queryResult.getArray("interests");
+                return new Profile(uuid, name, birthdayTimestamp, pictureUrls, friends, bio, interests);
+            }
 
-            Profile profile = new Profile(uuid, name, birthdayTimestamp, Arrays.asList(pictureUrls), friends, bio, interests);
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "entity not found"
+            );
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        // DataManager.getInstance().jdbcTemplate.query("SELECT * FROM profiles WHERE uuid == ?", uuid);
     }
 }
