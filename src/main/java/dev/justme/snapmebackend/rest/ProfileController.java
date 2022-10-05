@@ -27,12 +27,16 @@ public class ProfileController {
     }
 
     @GetMapping("/profile")
-    public Profile getProfile(@RequestParam(value = "uuid") String uuid) {
+    public Profile getProfile(@RequestParam(value = "uuid", required = false) String uuid) {
         try {
             Connection conn = Objects.requireNonNull(DataManager.getInstance().jdbcTemplate.getDataSource()).getConnection();
-
-            PreparedStatement statement = conn.prepareStatement("SELECT * FROM profiles WHERE uuid = ?;");
-            statement.setString(1, uuid);
+            PreparedStatement statement;
+            if (uuid == null) {
+                statement = conn.prepareStatement("SELECT * FROM profiles ORDER BY random() LIMIT 1");
+            } else {
+                statement = conn.prepareStatement("SELECT * FROM profiles WHERE uuid = ?;");
+                statement.setString(1, uuid);
+            }
 
             ResultSet queryResult = statement.executeQuery();
             if (queryResult.next()) {
