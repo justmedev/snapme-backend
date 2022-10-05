@@ -26,6 +26,13 @@ public class ProfileController {
         return profile;
     }
 
+    @DeleteMapping("/profile")
+    public void deleteProfile(@RequestParam(value = "uuid") String uuid) {
+        String sql = "DELETE FROM profiles WHERE uuid = ?;";
+        Object[] args = new Object[] {uuid};
+        DataManager.getInstance().jdbcTemplate.update(sql, args);
+    }
+
     @GetMapping("/profile")
     public Profile getProfile(@RequestParam(value = "uuid", required = false) String uuid) {
         try {
@@ -40,6 +47,7 @@ public class ProfileController {
 
             ResultSet queryResult = statement.executeQuery();
             if (queryResult.next()) {
+                String rowUUID = queryResult.getString("uuid");
                 String name = queryResult.getString("name");
                 String bio = queryResult.getString("bio");
                 @NotNull Date birthdayTimestamp = queryResult.getDate("birthday");
@@ -47,7 +55,7 @@ public class ProfileController {
                 String[] interests = (String[]) queryResult.getArray("interests").getArray();
                 String[] pictureUrls = (String[]) queryResult.getArray("pictureurls").getArray();
 
-                return new Profile(uuid, name, birthdayTimestamp, pictureUrls, friends, bio, interests);
+                return new Profile(rowUUID, name, birthdayTimestamp, pictureUrls, friends, bio, interests);
             }
 
             throw new ResponseStatusException(
